@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import django_tables2 as tables
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.template import RequestContext, Template
 from django.test import SimpleTestCase, override_settings
 from django.urls import path, reverse_lazy
@@ -200,7 +200,8 @@ class DirectoryTests(SimpleTestCase):
                 "X-Table-Path": "/institution/?tab=review",
             },
         )
-        body = b"".join(live.streaming_content).decode()
+        assert isinstance(live, StreamingHttpResponse)
+        body = b"".join(live).decode()
         self.assertEqual(live.status_code, 200)
         self.assertIn("text/event-stream", live.headers["Content-Type"])
         self.assertEqual(body.count("event: datastar-patch-elements"), 1)
@@ -217,7 +218,8 @@ class DirectoryTests(SimpleTestCase):
             headers={"Member": "yes", "Datastar-Request": "true"},
         )
         self.assertEqual(failed.status_code, 500)
-        body = b"".join(failed.streaming_content).decode()
+        assert isinstance(failed, StreamingHttpResponse)
+        body = b"".join(failed).decode()
         self.assertIn('id="staff-status"', body)
         self.assertNotIn("private error", body)
 
@@ -239,7 +241,8 @@ class DirectoryTests(SimpleTestCase):
             "/institution/?staff-q=Alma",
             headers={"Member": "yes", "Datastar-Request": "true"},
         )
-        body = b"".join([part async for part in response.streaming_content])
+        assert isinstance(response, StreamingHttpResponse)
+        body = b"".join([part async for part in response])
         self.assertIn(b"Alma", body)
 
     def test_sort_links_match_column_declarations_on_desktop_and_mobile(self):

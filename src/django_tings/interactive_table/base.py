@@ -55,7 +55,7 @@ class InteractiveTable(tables.Table):
     sse_fixed_query: ClassVar[Mapping[str, str]] = {}
     default_page_size: ClassVar[int] = 25
     static_height: ClassVar[bool] = True
-    display: TableDisplay = DEFAULT_TABLE_DISPLAY
+    display: ClassVar[TableDisplay] = DEFAULT_TABLE_DISPLAY
     _meta: ClassVar[TableOptions]
     base_columns: ClassVar[Mapping[str, tables.Column]]
     _truncate_cells: ClassVar[bool] = (
@@ -447,7 +447,10 @@ class InteractiveTable(tables.Table):
             template_name=template,
         )
         table.available_sort_columns = sortable
-        table.display = display or cls.display
+        # Host subclasses declare the default once. A request may shadow it on
+        # this instance without changing the declaration used by another user.
+        if display is not None:
+            table.display = display  # pyrefly: ignore[read-only]  # ty: ignore[invalid-attribute-access]
         table.theme = TableTheme.resolve(theme)
         table._validate_display()
         table.query, table.page_data = query, result

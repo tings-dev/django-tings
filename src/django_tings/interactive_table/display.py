@@ -334,7 +334,7 @@ class TableTheme:
 
     @classmethod
     def resolve(cls, override: Self | Mapping[str, str] | None) -> Self:
-        if isinstance(override, cls):
+        if override is not None and not isinstance(override, Mapping):
             return override
         default = getattr(settings, "DJANGO_TINGS_TABLE_THEME", {})
         base = default if isinstance(default, cls) else cls(**default)

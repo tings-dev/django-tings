@@ -35,6 +35,7 @@ dynamic = ["version"]
 [dependency-groups]
 dev = [
     "devtools",
+    "django-stubs>=6.1,<7",
     "icecream",
     "playwright>=1.65.2",
     "pre-commit",
