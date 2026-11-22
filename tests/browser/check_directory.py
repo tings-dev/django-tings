@@ -4,10 +4,12 @@ import os
 import threading
 from contextlib import contextmanager
 from socketserver import ThreadingMixIn
+from tempfile import TemporaryDirectory
 from wsgiref.simple_server import WSGIServer, make_server
 
-from django.contrib.staticfiles.handlers import StaticFilesHandler
+from django.core.management import call_command
 from django.core.wsgi import get_wsgi_application
+from django.test.utils import override_settings
 from playwright.sync_api import expect, sync_playwright
 
 
@@ -18,15 +20,20 @@ class Server(ThreadingMixIn, WSGIServer):
 @contextmanager
 def directory_url():
     os.environ["DJANGO_SETTINGS_MODULE"] = "directory_settings"
-    application = StaticFilesHandler(get_wsgi_application())
-    with make_server("127.0.0.1", 0, application, server_class=Server) as server:
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
-            yield f"http://127.0.0.1:{server.server_port}/directory/"
-        finally:
-            server.shutdown()
-            thread.join()
+    application = get_wsgi_application()
+    with (
+        TemporaryDirectory() as static_root,
+        override_settings(STATIC_ROOT=static_root),
+    ):
+        call_command("collectstatic", interactive=False, verbosity=0)
+        with make_server("127.0.0.1", 0, application, server_class=Server) as server:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                yield f"http://127.0.0.1:{server.server_port}/directory/"
+            finally:
+                server.shutdown()
+                thread.join()
 
 
 def check_search(browser, url):
@@ -36,19 +43,40 @@ def check_search(browser, url):
         + "?tab=review&clients-page=2&suppliers-page=2&clients-sort=name&clients-direction=desc&clients-filter_group=A"
     )
     clients = page.locator('[data-table-instance="clients"]')
+    suppliers = page.locator("#suppliers")
     search = clients.get_by_role("searchbox", name="Search contacts")
-    expect(clients.get_by_text("Page 2 of 3").first).to_be_visible()
-    search.fill("Clark")
-    expect(clients.get_by_text("Page 1 of 1").first).to_be_visible()
-    expect(clients.locator("tbody").first).to_contain_text("Clarkson")
-    expect(clients.locator("tbody").first).not_to_contain_text("Clark B")
-    expect(clients.get_by_text("2 records", exact=True).first).to_be_visible()
+    names = clients.locator("tbody td:first-child")
+    expect(clients.get_by_text("Page 2 of 3")).to_be_visible()
+    expect(suppliers.get_by_text("Page 2 of 4")).to_be_visible()
+    assert page.locator('script[src*="datastar-1.0.2"]').count() == 1
+    with page.expect_request(
+        lambda request: (
+            request.headers.get("datastar-request") and "clients-q=Clark" in request.url
+        )
+    ):
+        search.fill("Clark")
+    expect(clients.get_by_text("Page 1 of 1")).to_be_visible()
+    expect(names).to_have_text(["Clarkson", "Clark"])
+    expect(clients.get_by_text("2 records", exact=True)).to_be_visible()
     expect(search).to_be_focused()
     assert search.evaluate("el => el.selectionStart") == 5
     assert "clients-q=Clark" in page.url
+    assert "clients-filter_group=A" in page.url and "clients-direction=desc" in page.url
     assert "suppliers-page=2" in page.url and "tab=review" in page.url
     page.reload()
-    expect(clients.get_by_text("2 records", exact=True).first).to_be_visible()
+    expect(names).to_have_text(["Clarkson", "Clark"])
+    expect(suppliers.get_by_text("Page 2 of 4")).to_be_visible()
+    expect(page.get_by_role("link", name="Review")).to_have_attribute(
+        "aria-current", "page"
+    )
+    search.fill("")
+    expect(clients.get_by_text("6 records", exact=True)).to_be_visible()
+    assert "clients-q=" not in page.url and "clients-filter_group=A" in page.url
+    clients.get_by_role("link", name="Clear search and filters").click()
+    expect(clients.get_by_text("7 records", exact=True)).to_be_visible()
+    assert (
+        "clients-filter_group" not in page.url and "clients-direction=desc" in page.url
+    )
     page.close()
 
 
@@ -104,8 +132,12 @@ def check_failure_and_ordering(browser, url):
     page.go_back()
     expect(clients.get_by_text("3 records", exact=True)).to_be_visible()
     expect(search).to_have_value("Clark")
+    expect(suppliers.get_by_text("Page 3 of 4")).to_be_visible()
     page.go_forward()
     expect(clients.get_by_text("7 records", exact=True)).to_be_visible()
+    expect(page.get_by_role("link", name="Review")).to_have_attribute(
+        "aria-current", "page"
+    )
     assert "tab=review" in page.url and "suppliers-page=3" in page.url
     page.close()
 
@@ -120,9 +152,12 @@ def check_get_form(browser, url):
     clients.get_by_role("searchbox").fill("Clark")
     clients.get_by_role("button", name="Search", exact=True).click()
     expect(clients.get_by_text("2 records", exact=True)).to_be_visible()
-    expect(clients.locator("tbody")).to_contain_text("Clarkson")
+    names = clients.locator("tbody td:first-child")
+    expect(names).to_have_text(["Clarkson", "Clark"])
     assert "clients-filter_group=A" in page.url and "clients-direction=desc" in page.url
     assert "suppliers-page=2" in page.url and "tab=review" in page.url
+    clients.get_by_role("link", name="Name").click()
+    expect(names).to_have_text(["Clark", "Clarkson"])
     page.close()
 
 
@@ -132,7 +167,7 @@ def check_review(browser, url):
             viewport={"width": width, "height": 900}, reduced_motion="reduce"
         )
         errors = []
-        page.on("pageerror", errors.append)
+        page.on("pageerror", lambda error, errors=errors: errors.append(error))
         page.goto(url + "?review=yes&host_runtime=yes")
         root = page.locator("#clients")
         check = root.get_by_role("checkbox", name="Select Atlas")

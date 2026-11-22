@@ -3,6 +3,8 @@
 from dataclasses import replace
 
 import django_tables2 as tables
+from django.conf import settings
+from django.conf.urls.static import static
 from django.http import HttpResponse
 from django.template import engines
 from django.urls import path
@@ -94,13 +96,20 @@ async def directory(request):
         <head><meta name="viewport" content="width=device-width,initial-scale=1">
         {% load static %}{% if host_runtime %}<script type="module" src="{% static 'django_tings/interactive_table/datastar-1.0.2.js' %}"></script>{% endif %}
         {% include 'django_tings/interactive_table/assets.html' with host_datastar=host_runtime %}</head>
-        <body>{% render_table clients %}{% render_table suppliers %}</body></html>"""
+        <body>
+        <nav aria-label="Directory section">
+          <a href="?tab=directory"{% if active_tab == "directory" %} aria-current="page"{% endif %}>Directory</a>
+          <a href="?tab=review"{% if active_tab == "review" %} aria-current="page"{% endif %}>Review</a>
+        </nav>
+        {% render_table clients %}{% render_table suppliers %}
+        </body></html>"""
     )
     return HttpResponse(
         page.render(
             {
                 "clients": await create("clients"),
                 "suppliers": await create("suppliers"),
+                "active_tab": request.GET.get("tab", "directory"),
                 "host_runtime": request.GET.get("host_runtime") == "yes",
             },
             request,
@@ -121,3 +130,4 @@ def bulk_action(request):
 
 
 urlpatterns = [path("directory/", directory), path("apply/", bulk_action)]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

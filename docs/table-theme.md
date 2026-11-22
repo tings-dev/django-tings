@@ -18,18 +18,25 @@ Declare a `TableDisplay` on the table class, or pass an instance as `display=` t
 ```python
 from django.utils.translation import gettext_lazy as _
 from django_tings.interactive_table import (
-    ColumnKind, TableDisplay, TableMobileLayout, TableStatusStyle,
+    ColumnKind,
+    TableDisplay,
+    TableMobileLayout,
+    TableStatusStyle,
 )
 
 display = TableDisplay(
     caption=_("Contacts"),
     search_label=_("Search contacts"),
     column_kinds={"status": ColumnKind.STATUS},
-    status_styles={"active": TableStatusStyle(_("Active"), tone="success", icon="check")},
+    status_styles={
+        "active": TableStatusStyle(_("Active"), tone="success", icon="check")
+    },
     icon_only_status_columns=("status",),
     mobile=TableMobileLayout(
-        heading_column="name", summary_columns=("email",),
-        detail_columns=("team",), badge_column="status",
+        heading_column="name",
+        summary_columns=("email",),
+        detail_columns=("team",),
+        badge_column="status",
     ),
 )
 ```

@@ -18,6 +18,8 @@ Declare columns on an `InteractiveTable` subclass and use its async `for_request
 
 Use `{% include "django_tings/interactive_table/assets.html" with host_datastar=True %}` if the host already loads Datastar. The default stylesheet, browser enhancement, local Datastar runtime, and German translation catalog are included in the wheel.
 
+See the [interactive table guide](docs/interactive-table.md) for a complete view and template, loader examples, multiple table instances, and presentation options.
+
 ## Development
 
 Run `uv sync --locked --dev` and `uv run pytest`. Use `uv run ruff check` and `uv run ruff format --check` for linting and formatting.
