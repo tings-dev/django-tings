@@ -18,10 +18,11 @@ Agree on a public interface for `django_tings.interactive_table` and a validatio
 
 - [How does an application supply rows and request context?](issues/01-table-data-interface.md) was resolved by passing a request-scoped async loader from the view.
 - [How does a project configure and theme the table?](issues/02-display-and-theme.md) was resolved with `TableDisplay`, scoped CSS variables and named Django templates.
+- [What state belongs to one table instance?](issues/03-table-state.md) was resolved with independent named tables on shared URLs and the same search parameters for live refreshes and ordinary GETs.
 
 ## Not yet specified
 
-The migration sequence and any temporary compatibility imports still depend on how the library handles existing Carbonsheet URLs and refresh requests.
+<!-- No additional questions beyond the open decision tickets. -->
 
 ## Out of scope
 
