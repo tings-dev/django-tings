@@ -1,6 +1,8 @@
 # Reusable Datastar tables for Django
 
-Status: ready-for-agent
+Status: resolved
+
+The [implementation and validation report](validation.md) records the wheel, consumer revisions, browser results and baseline exceptions.
 
 ## Problem Statement
 
