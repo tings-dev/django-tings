@@ -1,0 +1,13 @@
+{% load i18n %}
+<div class="py-10 text-center" data-table-empty-state>
+  {% if table.request_state.has_active_filters %}
+    <h3 class="font-heading text-xl font-semibold text-ink">{{ table.display.empty.filtered_title }}</h3>
+    <p class="mx-auto mt-2 max-w-prose text-muted-ink">{{ table.display.empty.filtered_description }}</p>
+  {% else %}
+    <h3 class="font-heading text-xl font-semibold text-ink">{{ table.display.empty.title }}</h3>
+    <p class="mx-auto mt-2 max-w-prose text-muted-ink">{{ table.display.empty.description }}</p>
+    {% if table.empty_action_url %}
+      <a class="primary-action mt-4" href="{{ table.empty_action_url }}">{{ table.display.empty.action.label }}</a>
+    {% endif %}
+  {% endif %}
+</div>

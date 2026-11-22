@@ -1,0 +1,54 @@
+{% load i18n %}
+{% if table.get_has_toolbar_controls %}
+  <form method="get"
+        action="{{ table.get_page_url }}"
+        class="table-toolbar"
+        data-table-filter
+        data-table-toolbar>
+    {% for name, value in table.form_context_fields %}
+      <input type="hidden" name="{{ name }}" value="{{ value }}" data-table-context-field>
+    {% endfor %}
+    {% if table.quick_filter_column %}
+      {# Keeps the chip selection when the search form submits without JS. #}
+      <input type="hidden"
+             id="{{ table.get_table_id }}-quickfilter-state"
+             name="{{ table.query_prefix }}filter_{{ table.quick_filter_column }}"
+             value="{{ table.get_quick_filter_value }}">
+    {% endif %}
+
+    {% if table.get_search_mode == "visible" %}
+      {% include "django_tings/interactive_table/_filter_input.html" %}
+    {% elif table.get_search_mode == "collapsed" %}
+      <details class="table-search-disclosure"
+               data-table-collapsed-search
+               {% if table.filter_text %}open{% endif %}>
+        <summary class="secondary-action">{% translate "Search" %}</summary>
+        {% include "django_tings/interactive_table/_filter_input.html" %}
+      </details>
+    {% endif %}
+
+    {% if table.get_column_filter_count %}
+      <details class="table-filter-disclosure"
+               data-table-filter-disclosure
+               data-table-filter-count="{{ table.get_column_filter_count }}"
+               {% if table.get_column_filter_count <= 2 or table.get_active_column_filter_count %}open{% endif %}>
+        <summary class="secondary-action">
+          <span>{% translate "Filters" %}</span>
+          {% include "django_tings/interactive_table/_table_filter_active_state.html" %}
+        </summary>
+        <div class="table-filter-controls">
+          {% include "django_tings/interactive_table/_column_filters.html" %}
+        </div>
+      </details>
+    {% endif %}
+
+    <span data-table-submit>
+      <button class="secondary-action" type="submit">{% translate "Search" %}</button>
+    </span>
+    {% include "django_tings/interactive_table/_table_clear_state.html" %}
+  </form>
+{% endif %}
+<p class="table-refresh-indicator" data-table-loading-status hidden>
+  <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+  <span class="sr-only">{% translate "Refreshing table" %}</span>
+</p>

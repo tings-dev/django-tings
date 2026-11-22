@@ -1,0 +1,13 @@
+{% load i18n %}
+<div class="table-search-control">
+  <label for="{{ table.get_table_id }}-search">
+    {{ table.display.search_label }}
+  </label>
+  <input id="{{ table.get_table_id }}-search"
+         class="field-control table-search-input"
+         type="search"
+         name="{{ table.query_prefix }}q"
+         value="{{ table.filter_text|default:'' }}"
+         autocomplete="off"
+         data-table-search-input>
+</div>

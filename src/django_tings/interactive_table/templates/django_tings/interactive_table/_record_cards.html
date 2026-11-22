@@ -1,0 +1,87 @@
+{% load i18n interactive_table %}
+<div class="space-y-3 md:hidden" data-table-mobile-records>
+  {% for row in table.rows %}
+    {% table_row_details_url table row.record as details_destination %}
+    {% table_row_tone table row.record as row_tone %}
+    {% comment %}Cards keep the badge's word: icon-only relies on a legend
+    being on screen, which a card list cannot promise.{% endcomment %}
+    <article class="record-card"{% if row_tone %} data-row-tone="{{ row_tone }}"{% endif %}{% if details_destination %} data-table-row-details-url="{{ details_destination }}"{% endif %}>
+      <div class="flex min-w-0 items-start justify-between gap-2">
+        {% if table.display.selection %}
+          {% table_selection_value table row.record as selection_value %}
+          {% if selection_value %}
+            {% table_selection_label table row.record as selection_label %}
+            <label class="table-select-target table-select-target--card"><input class="table-select-checkbox" type="checkbox" value="{{ selection_value }}" aria-label="{{ selection_label }}" data-table-row-select></label>
+          {% endif %}
+        {% endif %}
+        <h3 class="min-w-0 flex-1 font-heading text-lg font-semibold text-ink">
+          {% for column, cell in row.items %}
+            {% if column.name == table.display.mobile.heading_column %}
+              {% if column.name == table.display.row_target.label_column %}
+                {% table_row_url table row.record as destination %}
+                {% if destination %}
+                  <a class="inline-flex min-h-11 min-w-0 max-w-full items-center text-teal underline" href="{{ destination }}">
+                    {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                  </a>
+                {% else %}
+                  {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                {% endif %}
+              {% elif table.display.row_details and column.name == table.display.row_details.label_column and details_destination %}
+                <a class="inline-flex min-h-11 min-w-0 max-w-full items-center text-teal underline" href="{{ details_destination }}">
+                  {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                </a>
+              {% else %}
+                {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        </h3>
+        {% if table.display.mobile.badge_column %}
+          {% for column, cell in row.items %}
+            {% if column.name == table.display.mobile.badge_column %}
+              {% table_status_style table cell as status_style %}
+              {% include table.theme.status_badge with style=status_style value=cell icon_only=False mobile=True record=row.record %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
+      <dl class="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-2">
+        {% for column, cell in row.items %}
+          {% if column.name in table.display.mobile.summary_columns %}
+            {% table_column_kind table column.name as kind %}
+            {% table_column_sublabel table column.name as sublabel %}
+            {% table_cell_url table column.name row.record as cell_destination %}
+            {% table_cell_tone table column.name row.record as cell_tone %}
+            {% table_cell_diff table column.name row.record as previous_value %}
+            <dt class="font-bold text-muted-ink">{% include "django_tings/interactive_table/_column_label.html" with label=column.header sublabel=sublabel only %}</dt>
+            <dd class="min-w-0 break-words text-ink{% if previous_value != None %} table-cell--changed{% endif %}" data-kind="{{ kind }}">{% if cell_destination %}<a class="inline-flex min-h-11 items-center text-teal underline" href="{{ cell_destination }}">{% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}</a>{% elif kind == "status" %}{% table_status_style table cell as status_style %}{% include table.theme.status_badge with style=status_style value=cell icon_only=False mobile=True record=row.record %}{% elif cell_tone %}<span class="status-badge status-badge--{{ cell_tone }}">{% include "django_tings/interactive_table/_status_icon.html" with icon="alert" only %}<span>{{ cell }}</span></span>{% else %}{% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}{% endif %}{% if previous_value != None %}<span class="table-cell-diff"><span class="sr-only">{% translate "Previous value:" %} </span><del>{{ previous_value }}</del></span>{% endif %}</dd>
+          {% endif %}
+        {% endfor %}
+      </dl>
+      {% if table.display.row_action %}
+        {% include "django_tings/interactive_table/_row_action.html" with mobile=True %}
+      {% endif %}
+      {% if table.display.mobile.detail_columns %}
+        <details class="mt-3 border-t border-border pt-2">
+          <summary class="min-h-11 cursor-pointer py-2 font-bold text-teal">{% translate "More details" %}</summary>
+          <dl class="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-2">
+            {% for column, cell in row.items %}
+              {% if column.name in table.display.mobile.detail_columns %}
+                {% table_column_kind table column.name as kind %}
+                {% table_column_sublabel table column.name as sublabel %}
+                {% table_cell_url table column.name row.record as cell_destination %}
+                {% table_cell_diff table column.name row.record as previous_value %}
+                {% table_cell_tone table column.name row.record as cell_tone %}
+                <dt class="font-bold text-muted-ink">{% include "django_tings/interactive_table/_column_label.html" with label=column.header sublabel=sublabel only %}</dt>
+                <dd class="min-w-0 break-words text-ink{% if previous_value != None %} table-cell--changed{% endif %}" data-kind="{{ kind }}">{% if cell_destination %}<a class="inline-flex min-h-11 items-center text-teal underline" href="{{ cell_destination }}">{% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}</a>{% elif kind == "status" %}{% table_status_style table cell as status_style %}{% include table.theme.status_badge with style=status_style value=cell icon_only=False mobile=True record=row.record %}{% elif cell_tone %}<span class="status-badge status-badge--{{ cell_tone }}">{% include "django_tings/interactive_table/_status_icon.html" with icon="alert" only %}<span>{{ cell }}</span></span>{% else %}{% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}{% endif %}{% if previous_value != None %}<span class="table-cell-diff"><span class="sr-only">{% translate "Previous value:" %} </span><del>{{ previous_value }}</del></span>{% endif %}</dd>
+              {% endif %}
+            {% endfor %}
+          </dl>
+        </details>
+      {% endif %}
+    </article>
+  {% endfor %}
+  {% for _ in table.empty_rows_range %}
+    {% include "django_tings/interactive_table/_record_card_placeholder.html" %}
+  {% endfor %}
+</div>

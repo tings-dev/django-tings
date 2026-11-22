@@ -1,0 +1,10 @@
+{# Column name with a small sub-label stacked beneath it: a measurement unit, #}
+{# or a qualifier that would otherwise widen the name (Year / Production). #}
+{# `linked` carries the sort-link underline on the name span alone: #}
+{# text-decoration propagates from an ancestor to its in-flow descendants #}
+{# and cannot be switched off further down, so the underline cannot live #}
+{# on the wrapping <a> if the sub-label is to stay plain. #}
+<span class="table-column-label{% if kind == 'number' %} table-column-label--end{% endif %}">
+  <span{% if linked %} class="underline decoration-teal decoration-2 underline-offset-4"{% endif %}>{{ label }}</span>
+  {% if sublabel %}<span class="table-column-sublabel">{{ sublabel }}</span>{% endif %}
+</span>

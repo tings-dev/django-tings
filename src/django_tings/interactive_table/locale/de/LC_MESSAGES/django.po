@@ -1,0 +1,144 @@
+# German translations for django-tings.
+# Copyright (c) 2026 Markus Binsteiner. Distributed under the MIT license.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-tings\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-22 11:46+0000\n"
+"PO-Revision-Date: 2026-11-22 00:00\n"
+"Last-Translator: django-tings contributors\n"
+"Language-Team: de\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Filter rows"
+msgstr "Zeilen filtern"
+
+msgid "No data available"
+msgstr "Keine Daten verfügbar"
+
+msgid "There is no data to display yet."
+msgstr "Es sind noch keine Daten vorhanden."
+
+msgid "No matching data"
+msgstr "Keine passenden Daten"
+
+msgid "Try changing or clearing the search and filters."
+msgstr "Ändern oder leeren Sie die Suche und die Filter."
+
+msgid "Data"
+msgstr "Daten"
+
+msgid "Search data"
+msgstr "Daten durchsuchen"
+
+msgid "All values"
+msgstr "Alle Werte"
+
+#, python-format
+msgid "%(column_label)s from"
+msgstr "%(column_label)s von"
+
+#, python-format
+msgid "%(column_label)s to"
+msgstr "%(column_label)s bis"
+
+#, python-format
+msgid "%(counter)s record"
+msgid_plural "%(counter)s records"
+msgstr[0] "%(counter)s Datensatz"
+msgstr[1] "%(counter)s Datensätze"
+
+msgid "Table pages"
+msgstr "Tabellenseiten"
+
+msgid "First page"
+msgstr "Erste Seite"
+
+msgid "Previous page"
+msgstr "Vorherige Seite"
+
+#, python-format
+msgid "Page %(page)s of %(pages)s"
+msgstr "Seite %(page)s von %(pages)s"
+
+msgid "Next page"
+msgstr "Nächste Seite"
+
+msgid "Last page"
+msgstr "Letzte Seite"
+
+msgid "Shown. Activate to hide these rows."
+msgstr "Eingeblendet. Aktivieren, um diese Zeilen auszublenden."
+
+msgid "Hidden. Activate to show these rows."
+msgstr "Ausgeblendet. Aktivieren, um diese Zeilen einzublenden."
+
+msgid "Previous value:"
+msgstr "Vorheriger Wert:"
+
+msgid "More details"
+msgstr "Weitere Details"
+
+msgid "1 selected"
+msgstr "1 ausgewählt"
+
+#, python-format
+msgid "%(count)s selected"
+msgstr "%(count)s ausgewählt"
+
+msgid "Nothing selected"
+msgstr "Nichts ausgewählt"
+
+msgid "Select page"
+msgstr "Seite auswählen"
+
+msgid "Clear selection"
+msgstr "Auswahl aufheben"
+
+msgid "Scroll the table horizontally to compare columns"
+msgstr "Scrollen Sie die Tabelle horizontal, um Spalten zu vergleichen"
+
+msgid "Scroll the table horizontally to view all columns"
+msgstr "Scrollen Sie die Tabelle horizontal, um alle Spalten zu sehen"
+
+msgid "Select"
+msgstr "Auswählen"
+
+msgid "Sort results"
+msgstr "Ergebnisse sortieren"
+
+msgid "Sorted descending"
+msgstr "Absteigend sortiert"
+
+msgid "Sorted ascending"
+msgstr "Aufsteigend sortiert"
+
+msgid "Clear search and filters"
+msgstr "Suche und Filter leeren"
+
+msgid "Search"
+msgstr "Suchen"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Refreshing table"
+msgstr "Tabelle wird aktualisiert"
+
+msgid "Table updated"
+msgstr "Tabelle aktualisiert"
+
+msgid "The table could not be refreshed. Try again."
+msgstr "Die Tabelle konnte nicht aktualisiert werden. Versuchen Sie es erneut."
+
+msgid "Retry"
+msgstr "Erneut versuchen"
+
+#, python-format
+msgid "Select %(record)s"
+msgstr "%(record)s auswählen"

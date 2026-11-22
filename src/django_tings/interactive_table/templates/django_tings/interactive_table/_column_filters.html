@@ -1,0 +1,43 @@
+{% load i18n interactive_table %}
+{% for column, filter_type in table.column_filters.items %}
+  {% table_column_label table column as column_label %}
+  {% if filter_type == "select" %}
+    {% table_filter_value table column as current_value %}
+    <div class="table-column-filter">
+      <label class="mb-1 block font-bold" for="{{ table.get_table_id }}-filter-{{ column }}">
+        {{ column_label }}
+      </label>
+      <select id="{{ table.get_table_id }}-filter-{{ column }}"
+              class="field-control"
+              name="{{ table.query_prefix }}filter_{{ column }}">
+        <option value="">{% translate "All values" %}</option>
+        {% for option in table.get_column_filter_options|get_item:column %}
+          <option value="{{ option }}"{% if option == current_value %} selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% elif filter_type == "daterange" or filter_type == "date-range" or filter_type == "date_range" %}
+    {% table_filter_value table column "start" as start_value %}
+    {% table_filter_value table column "end" as end_value %}
+    <div class="table-column-filter">
+      <label class="mb-1 block font-bold" for="{{ table.get_table_id }}-filter-{{ column }}-start">
+        {% blocktranslate with column_label=column_label %}{{ column_label }} from{% endblocktranslate %}
+      </label>
+      <input id="{{ table.get_table_id }}-filter-{{ column }}-start"
+             class="field-control"
+             type="date"
+             name="{{ table.query_prefix }}filter_{{ column }}_start"
+             value="{{ start_value }}">
+    </div>
+    <div class="table-column-filter">
+      <label class="mb-1 block font-bold" for="{{ table.get_table_id }}-filter-{{ column }}-end">
+        {% blocktranslate with column_label=column_label %}{{ column_label }} to{% endblocktranslate %}
+      </label>
+      <input id="{{ table.get_table_id }}-filter-{{ column }}-end"
+             class="field-control"
+             type="date"
+             name="{{ table.query_prefix }}filter_{{ column }}_end"
+             value="{{ end_value }}">
+    </div>
+  {% endif %}
+{% endfor %}

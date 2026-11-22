@@ -1,0 +1,9 @@
+{% load i18n %}
+<div class="table-pagination" data-table-pagination="{{ position }}" data-alignment="{{ alignment }}">
+  <p class="text-sm text-muted-ink">
+    {% include "django_tings/interactive_table/_count.html" %}
+  </p>
+  <nav aria-label="{% translate 'Table pages' %}">
+    {% include "django_tings/interactive_table/_pagination_buttons.html" %}
+  </nav>
+</div>

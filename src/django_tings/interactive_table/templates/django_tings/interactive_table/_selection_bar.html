@@ -1,0 +1,20 @@
+{% load i18n %}
+<div class="table-selection-bar"
+     data-table-selection-bar
+     data-selection-count-one="{% translate "1 selected" %}"
+     data-selection-count-template="{% blocktranslate with count="%s" %}{{ count }} selected{% endblocktranslate %}"
+     data-selection-none="{% translate "Nothing selected" %}">
+  <label class="table-selection-bar__all">
+    <input class="table-select-checkbox" type="checkbox" data-table-select-page>
+    <span>{% translate "Select page" %}</span>
+  </label>
+  <span class="table-selection-bar__count" data-table-selection-count aria-live="polite">{% translate "Nothing selected" %}</span>
+  <button class="table-selection-bar__clear" type="button" data-table-selection-clear disabled>{% translate "Clear selection" %}</button>
+  {% if table.display.selection.action_url %}
+    <form method="post" action="{{ table.display.selection.action_url }}" data-table-selection-action>
+      {% csrf_token %}
+      {% for name, value in table.display.selection.action_fields %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+      <button class="secondary-action" type="submit" disabled data-table-selection-act>{{ table.display.selection.action_label }}</button>
+    </form>
+  {% endif %}
+</div>

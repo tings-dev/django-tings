@@ -1,0 +1,10 @@
+{% load i18n %}
+<span id="{{ table.get_table_id }}-clear-state" data-table-clear-state>
+  {% if table.request_state.has_active_filters %}
+    <a class="table-clear-action"
+       data-table-clear-action data-table-state-url
+       href="{{ table.get_clear_url }}">
+      {% translate "Clear search and filters" %}
+    </a>
+  {% endif %}
+</span>

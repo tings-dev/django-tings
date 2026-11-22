@@ -1,0 +1,25 @@
+{% comment %}
+Render one STATUS-kind cell value as an icon + translated word badge.
+Context: `style` (TableStatusStyle or None), `value` (raw cell value), and
+`icon_only` (drop the visible word, keeping the accessible name). Icon-only is
+only legible where the page shows a legend naming every value, so it is opt-in
+per column via TableDisplay.icon_only_status_columns. A style with no icon
+keeps its word regardless: an iconless icon-only badge would render empty.
+{% endcomment %}
+{% if style %}
+  {% with compact=icon_only|yesno:"1," %}
+    {% if compact and style.icon %}
+      <span class="status-badge status-badge--{{ style.tone }} status-badge--icon-only" title="{{ style.label }}">
+        {% include "django_tings/interactive_table/_status_icon.html" with icon=style.icon only %}
+        <span class="sr-only">{{ style.label }}</span>
+      </span>
+    {% else %}
+      <span class="status-badge status-badge--{{ style.tone }}">
+        {% include "django_tings/interactive_table/_status_icon.html" with icon=style.icon only %}
+        <span>{{ style.label }}</span>
+      </span>
+    {% endif %}
+  {% endwith %}
+{% else %}
+  {{ value|default:"" }}
+{% endif %}

@@ -1,0 +1,192 @@
+{% load i18n django_tables2 interactive_table %}
+<div class="it-table-grid{% if table.display.mobile %} it-desktop-only{% endif %}">
+  <div class="interactive-table-scroll max-w-full"
+       tabindex="0"
+       role="region"
+       {% if table.display.comparison_scroll %}aria-label="{% translate 'Scroll the table horizontally to compare columns' %}" data-table-comparison-scroll{% else %}aria-label="{% translate 'Scroll the table horizontally to view all columns' %}" data-table-scroll{% endif %}>
+  <table {% render_attrs table.attrs %}>
+    <caption class="sr-only">{{ table.display.caption }}</caption>
+    <thead>
+      <tr>
+        {% if table.display.selection %}
+          <th scope="col" data-kind="select"><span class="sr-only">{% translate "Select" %}</span></th>
+        {% endif %}
+        {% for column in table.columns %}
+          {% table_column_kind table column.name as kind %}
+          {% table_column_sublabel table column.name as sublabel %}
+          {% if column.orderable and column.name in table.sortable_columns %}
+            {% table_aria_sort table column.name as aria_sort %}
+            {% table_sort_url table column.name as destination %}
+            <th scope="col" data-kind="{{ kind }}"{% if table.display.pin_identity_column and column.name == table.get_identity_column %} data-identity-column="true"{% endif %} aria-sort="{{ aria_sort }}"{% if column.attrs.th %} {% render_attrs column.attrs.th %}{% endif %}>
+              <a class="inline-flex w-full items-center gap-1 font-bold text-ink{% if kind == 'number' %} justify-end text-right{% endif %}"
+                 href="{{ destination }}"
+                 data-table-state-url
+                 data-table-focus-key="sort-desktop-{{ column.name }}">
+                {% include "django_tings/interactive_table/_column_label.html" with label=column.header sublabel=sublabel kind=kind linked=True only %}
+                {% if table.sort_column == column.name %}
+                  <span class="table-sort-indicator" aria-hidden="true">{% if table.sort_direction == "desc" %}↓{% else %}↑{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+          {% else %}
+            <th scope="col" data-kind="{{ kind }}"{% if table.display.pin_identity_column and column.name == table.get_identity_column %} data-identity-column="true"{% endif %}{% if column.attrs.th %} {% render_attrs column.attrs.th %}{% endif %}>{% include "django_tings/interactive_table/_column_label.html" with label=column.header sublabel=sublabel kind=kind only %}</th>
+          {% endif %}
+        {% endfor %}
+        {% if table.display.row_action %}
+          <th scope="col" data-kind="action"><span class="sr-only">{% firstof table.display.row_action.header_label table.display.row_action.label %}</span></th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% if table.current_row_count %}
+        {% for row in table.rows %}
+          {% table_row_details_url table row.record as details_destination %}
+          {% table_row_tone table row.record as row_tone %}
+          {% comment %}Hover lives in CSS, not a utility class: a bg-* utility would
+          repaint the row and erase its tone on hover.{% endcomment %}
+          <tr{% if row_tone %} data-row-tone="{{ row_tone }}"{% endif %}{% if details_destination %} data-table-row-details-url="{{ details_destination }}"{% endif %}>
+            {% if table.display.selection %}
+              {% table_selection_value table row.record as selection_value %}
+              <td data-kind="select">
+                {% if selection_value %}
+                  {% table_selection_label table row.record as selection_label %}
+                  <label class="table-select-target"><input class="table-select-checkbox" type="checkbox" value="{{ selection_value }}" aria-label="{{ selection_label }}" data-table-row-select></label>
+                {% endif %}
+              </td>
+            {% endif %}
+            {% for column, cell in row.items %}
+              {% table_column_kind table column.name as kind %}
+              {% table_cell_diff table column.name row.record as previous_value %}
+              <td data-kind="{{ kind }}"{% if previous_value != None %} class="table-cell--changed"{% endif %}{% if table.display.pin_identity_column and column.name == table.get_identity_column %} data-identity-column="true"{% endif %}{% if column.attrs.td %} {% render_attrs column.attrs.td %}{% endif %}>
+                {% if kind == "status" %}
+                  {% table_status_style table cell as status_style %}
+                  {% table_status_icon_only table column.name as status_icon_only %}
+                  {% include table.theme.status_badge with style=status_style value=cell icon_only=status_icon_only mobile=False record=row.record %}
+                {% elif column.name == table.display.row_target.label_column %}
+                  {% table_row_url table row.record as destination %}
+                  {% if destination %}
+                    <span class="table-identity-target">
+                      <a class="table-identity-link inline-flex items-center font-bold text-teal underline" href="{{ destination }}">
+                        {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                      </a>
+                    </span>
+                  {% else %}
+                    {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                  {% endif %}
+                {% elif table.display.row_details and column.name == table.display.row_details.label_column %}
+                  {% if details_destination %}
+                    <span class="table-identity-target">
+                      <a class="table-identity-link inline-flex items-center font-bold text-teal underline" href="{{ details_destination }}">
+                        {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                      </a>
+                    </span>
+                  {% else %}
+                    {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                  {% endif %}
+                {% else %}
+                  {% table_cell_url table column.name row.record as cell_destination %}
+                  {% table_cell_tone table column.name row.record as cell_tone %}
+                  {% if cell_destination %}
+                    <a class="inline-flex items-center text-teal underline" href="{{ cell_destination }}">
+                      {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                    </a>
+                  {% elif cell_tone %}
+                    <span class="status-badge status-badge--{{ cell_tone }}">{% include "django_tings/interactive_table/_status_icon.html" with icon="alert" only %}<span>{{ cell }}</span></span>
+                  {% else %}
+                    {% if table.truncate_cells %}<span class="table-cell-content">{{ cell }}</span>{% else %}{{ cell }}{% endif %}
+                  {% endif %}
+                {% endif %}
+                {% if previous_value != None %}
+                  <span class="table-cell-diff"><span class="sr-only">{% translate "Previous value:" %} </span><del>{{ previous_value }}</del></span>
+                {% endif %}
+              </td>
+            {% endfor %}
+            {% if table.display.row_action %}
+              <td data-kind="action">
+                {% include "django_tings/interactive_table/_row_action.html" with mobile=False %}
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr class="interactive-table-empty-row">
+          <td colspan="{{ table.column_span }}">
+            <span class="interactive-table-placeholder-cell">&nbsp;</span>
+            {% include table.theme.empty with mobile=False %}
+          </td>
+        </tr>
+      {% endif %}
+      {% for _ in table.empty_rows_range %}
+        <tr class="interactive-table-placeholder-row" aria-hidden="true">
+          <td colspan="{{ table.column_span }}"><span class="interactive-table-placeholder-cell">&nbsp;</span></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{% if table.sortable_columns and table.display.mobile %}
+  <details class="mb-3 rounded-surface border border-border bg-surface md:hidden" data-table-mobile-sort>
+    <summary class="min-h-11 cursor-pointer px-3 py-2 font-bold text-teal">
+      <span>{% translate "Sort results" %}</span>
+      {% for column in table.columns %}
+        {% if column.name == table.sort_column %}
+          <span class="ml-1 text-ink">— {{ column.header }} <span aria-hidden="true">{% if table.sort_direction == "desc" %}↓{% else %}↑{% endif %}</span></span>
+          <span class="sr-only">{% if table.sort_direction == "desc" %}{% translate "Sorted descending" %}{% else %}{% translate "Sorted ascending" %}{% endif %}</span>
+        {% endif %}
+      {% endfor %}
+    </summary>
+    <ul class="border-t border-border p-2" role="list">
+      {% for column in table.columns %}
+        {% if column.orderable and column.name in table.sortable_columns %}
+          {% table_sort_url table column.name as destination %}
+          <li>
+            <a class="flex min-h-11 items-center justify-between rounded-field px-2 font-bold text-teal underline"
+               href="{{ destination }}"
+               {% if column.name == table.sort_column %}aria-current="true"{% endif %}
+               data-table-state-url
+               data-table-focus-key="sort-mobile-{{ column.name }}">
+              <span>{{ column.header }}</span>
+              {% if column.name == table.sort_column %}
+                <span>
+                  <span aria-hidden="true">{% if table.sort_direction == "desc" %}↓{% else %}↑{% endif %}</span>
+                  <span class="sr-only">{% if table.sort_direction == "desc" %}{% translate "Sorted descending" %}{% else %}{% translate "Sorted ascending" %}{% endif %}</span>
+                </span>
+              {% endif %}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </details>
+{% endif %}
+
+{% if table.display.mobile %}
+  {% if table.current_row_count %}
+    {% include "django_tings/interactive_table/_record_cards.html" %}
+  {% else %}
+    <div class="space-y-3 md:hidden" data-table-mobile-records>
+      <article class="record-card interactive-table-empty-card">
+        <div class="interactive-table-empty-card__shell">
+          <div class="interactive-table-placeholder-card__heading">&nbsp;</div>
+          <dl class="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-2">
+            {% for column in table.display.mobile.summary_columns %}
+              <dt>&nbsp;</dt>
+              <dd>&nbsp;</dd>
+            {% endfor %}
+          </dl>
+          {% if table.display.mobile.detail_columns %}
+            <div class="mt-3 border-t border-border pt-2">
+              <div class="interactive-table-placeholder-card__detail">&nbsp;</div>
+            </div>
+          {% endif %}
+        </div>
+        {% include table.theme.empty with mobile=True %}
+      </article>
+      {% for _ in table.empty_rows_range %}
+        {% include "django_tings/interactive_table/_record_card_placeholder.html" %}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endif %}

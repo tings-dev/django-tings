@@ -1,0 +1,32 @@
+{% load i18n %}
+<section id="{{ table.get_table_id }}" class="data-region interactive-table-region it-table"
+         aria-label="{{ table.display.caption }}" aria-busy="false"
+         data-interactive-table data-table-instance="{{ table.instance_name }}"
+         data-table-query-keys="{{ table.query_keys }}" data-table-query-prefix="{{ table.query_prefix }}"
+         data-table-endpoint="{{ table.get_sse_url }}" data-table-url="{{ table.get_current_url }}"
+         data-init="el.dataset.tableEnhanced = 'true'"
+         data-table-density="{{ table.get_density }}"
+         {% if table.display.wide_table %}data-table-wide{% endif %}
+         {% if table.display.pin_identity_column %}data-table-pin-identity{% endif %}
+         {% if table.display.column_sublabels %}data-table-sublabels{% endif %}>
+  {% include "django_tings/interactive_table/_table_toolbar_shell.html" %}
+  {% if table.quick_filter_column %}{% include "django_tings/interactive_table/_quick_filter_chips.html" %}{% endif %}
+  {% if table.display.selection %}{% include "django_tings/interactive_table/_selection_bar.html" %}{% endif %}
+  <div id="{{ table.get_table_id }}-status" aria-live="polite" aria-atomic="true">
+    <p class="sr-only" data-table-refresh-success hidden>{% translate "Table updated" %}. {% include "django_tings/interactive_table/_count.html" %}</p>
+    <p class="status-banner status-error" data-table-refresh-error hidden>
+      {% translate "The table could not be refreshed. Try again." %}
+      <button type="button" data-table-retry>{% translate "Retry" %}</button>
+    </p>
+  </div>
+  {% if "above" in table.get_pagination_position %}
+    {% include "django_tings/interactive_table/_pagination.html" with position="above" alignment=table.get_pagination_alignment_above %}
+  {% endif %}
+  {% if table.display.sticky_headers %}<div class="table-sticky-header" data-table-sticky-header role="group" aria-label="{{ table.display.caption }}" hidden></div>{% endif %}
+  <div id="{{ table.get_table_id }}-results" class="min-h-24">
+    <div id="{{ table.get_table_id }}-body">{% include "django_tings/interactive_table/_table_body.html" %}</div>
+    {% if "below" in table.get_pagination_position %}
+      {% include "django_tings/interactive_table/_pagination.html" with position="below" alignment=table.get_pagination_alignment_below %}
+    {% endif %}
+  </div>
+</section>

@@ -1,0 +1,14 @@
+{% load interactive_table %}{% table_row_action_url table row.record as action_url %}
+{% table_row_action_value table row.record as action_value %}
+{% table_row_action_disabled table row.record as action_disabled %}
+{% table_row_action_disabled_reason table row.record as action_disabled_reason %}
+{% with action=table.display.row_action record=row.record %}
+  {% if action_url %}
+    <a class="secondary-action table-row-action{% if action.icon and not mobile %} table-row-action--icon{% endif %}" href="{{ action_url }}">{% include table.theme.action %}</a>
+  {% elif action_value or not action.hide_without_value %}
+    <button type="button" class="secondary-action table-row-action{% if action.icon and not mobile %} table-row-action--icon{% endif %}"{% if action.name %} data-table-row-action="{{ action.name }}"{% endif %}{% if action_value %} data-table-row-action-value="{{ action_value }}"{% endif %}{% if action_disabled %} disabled{% if action_disabled_reason %} title="{{ action_disabled_reason }}"{% endif %}{% endif %}>
+      {% include table.theme.action %}
+      {% if action_disabled and action_disabled_reason %}<span class="sr-only"> — {{ action_disabled_reason }}</span>{% endif %}
+    </button>
+  {% endif %}
+{% endwith %}

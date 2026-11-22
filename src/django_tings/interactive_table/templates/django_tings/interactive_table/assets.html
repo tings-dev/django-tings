@@ -1,0 +1,4 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'django_tings/interactive_table/table.css' %}">
+<script type="module" src="{% static 'django_tings/interactive_table/interactive-table.js' %}"></script>
+{% if not host_datastar %}<script type="module" src="{% static 'django_tings/interactive_table/datastar-1.0.2.js' %}"></script>{% endif %}

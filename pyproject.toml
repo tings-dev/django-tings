@@ -36,6 +36,7 @@ dynamic = ["version"]
 dev = [
     "devtools",
     "icecream",
+    "playwright>=1.65.2",
     "pre-commit",
     "pyrefly",
     "pytest",
@@ -45,7 +46,7 @@ dev = [
     "ruff",
     "snoop",
     "ty",
-    "wat"
+    "wat",
 ]
 
 [project.urls]

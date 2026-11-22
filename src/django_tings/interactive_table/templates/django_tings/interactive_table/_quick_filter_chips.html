@@ -1,0 +1,21 @@
+{% load i18n %}
+<div id="{{ table.get_table_id }}-quickfilter" class="table-quick-filter">
+  {% if table.quick_filter_chips %}
+    <div class="table-quick-filter__group"
+         role="group"
+         aria-label="{{ table.get_quick_filter_label }}">
+      {% for chip in table.quick_filter_chips %}
+        <a class="table-chip table-chip--{{ chip.facet.tone }}{% if chip.active %} table-chip--active{% endif %}"
+           href="{{ chip.url }}"
+           {% if chip.active %}aria-current="true"{% endif %}
+           data-table-state-url
+           data-table-focus-key="chip-{{ table.quick_filter_column }}-{{ chip.facet.value }}">
+          <span class="table-chip__state" aria-hidden="true"></span>
+          <span>{{ chip.facet.label }}</span>
+          <span class="table-chip__count">{{ chip.facet.count }}</span>
+          <span class="sr-only">{% if chip.active %}{% translate "Shown. Activate to hide these rows." %}{% else %}{% translate "Hidden. Activate to show these rows." %}{% endif %}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

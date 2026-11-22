@@ -1,0 +1,7 @@
+<span id="{{ table.get_table_id }}-filter-active-state"
+      data-table-filter-active-state
+      data-table-active-filter-count="{{ table.get_active_column_filter_count }}">
+  {% if table.get_active_column_filter_count %}
+    <span class="table-filter-count">{{ table.get_active_column_filter_count }}</span>
+  {% endif %}
+</span>
