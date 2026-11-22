@@ -1,0 +1,13 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 0.3.1
+_src_path: https://github.com/frkl-dev/python-project-template
+anaconda_user: ''
+email: markus@frkl.dev
+full_name: Markus Binsteiner
+github_user: frkl-dev
+project_licenses:
+- MIT
+project_name: django-tings
+project_short_description: Reusable Django components, starting with interactive Datastar
+    tables.
+python_min_version: '3.12'

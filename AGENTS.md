@@ -1,0 +1,69 @@
+# AGENTS.md
+
+This file provides guidance to AI agents when working with code in this repository.
+
+## Project Overview
+
+- project_name: `django-tings`
+- project_description: Reusable Django components, starting with interactive Datastar tables.
+- python base module: `django_tings`
+- documentation: `docs` folder
+
+## Development Commands
+
+This project uses `uv` for dependency management and `just` as a task runner.
+
+### Using just (preferred)
+- `just tests` - Run all unit tests
+- `just test <pattern>` - Run tests matching a pattern (e.g., `just test test_example`)
+- `just typecheck` - Run type checker (pyrefly)
+- `just typecheck-ty` - Run the alternative type checker (ty)
+- `just lint` - Run ruff linter with auto-fix
+- `just format` - Run ruff formatter
+
+### Using uv directly
+- `uv run pytest tests -s` - Run all tests
+- `uv run pytest tests -s -k <pattern>` - Run tests matching pattern
+- `uv run pyrefly check` - Type check
+- `uv run ty check` - Type check with ty instead
+- `uv run ruff check . --fix` - Lint with auto-fix
+- `uv run ruff format .` - Format code
+
+## Dependency Management
+
+- Runtime dependencies live in `[project].dependencies`, dev tooling in the `dev` dependency
+  group (`uv add <pkg>` / `uv add --dev <pkg>`).
+- `uv.lock` is committed. The `uv-lock` pre-commit hook re-locks when `pyproject.toml`
+  changes, and CI installs with `uv sync --locked`, so a stale lockfile fails loudly.
+- A weekly scheduled workflow (`.github/workflows/dependency-refresh.yaml`) runs
+  `uv lock --upgrade`, tests the fresh resolution, and opens a PR with the new lockfile.
+  Don't upgrade dependencies by editing the lockfile by hand.
+
+## Code Architecture
+
+This package is created from a template project. In case you need to modify something in the generic project setup that would benefit other projects, let me know instead of changing
+things in here.
+
+### Package Structure
+- Source code: `src/django_tings/`, with each ting under its own import path.
+- Tests: `tests/`
+
+### Code Style
+- Formatter: ruff (black-compatible, line-length 88)
+- Linter: ruff
+- Type checker: pyrefly (ty is also installed and configured; see `just typecheck-ty`)
+- Docstring convention: Google style
+
+### Debug Utilities
+Import `django_tings._debug` in a script or REPL to install the debug helpers as
+builtins when the dev dependencies are available.
+- `dbg()` - Rich print for debugging
+- `DBG()` - devtools debug
+- `ic()` - icecream debugger
+- `wat` / `wats` - wat inspection tool
+- `insp()` - Rich inspect
+- `snoop` - Function tracer (auto-installed)
+
+## Test Markers
+Tests can be marked with: `slow`, `integration`, `unit`
+Example: `uv run pytest tests -m "not slow"`
