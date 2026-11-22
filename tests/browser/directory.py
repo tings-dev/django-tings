@@ -15,6 +15,7 @@ from django_tings.interactive_table import (
     TableDisplay,
     TableMobileLayout,
     TablePage,
+    TableRowDetails,
     TableRowSelection,
     TableStatusStyle,
     successful_table_response,
@@ -63,6 +64,7 @@ async def directory(request):
             status_styles={
                 "A": TableStatusStyle("Active", tone="success", icon="check")
             },
+            row_details=TableRowDetails("name", value_column="name"),
             selection=TableRowSelection(
                 "name",
                 "name",
@@ -81,6 +83,9 @@ async def directory(request):
             load_page=load_page,
             instance_name=instance,
             display=display,
+            config={"pagination_position": ("above", "below")}
+            if "both" in request.GET
+            else {},
             theme={"status_badge": "directory/badge.html"} if review else None,
         )
 
@@ -92,7 +97,7 @@ async def directory(request):
         return successful_table_response(table, request)
 
     page = engines["django"].from_string(
-        """{% load django_tables2 %}<!doctype html><html lang="en">
+        """{% load django_tables2 i18n %}{% get_current_language as language %}<!doctype html><html lang="{{ language }}">
         <head><meta name="viewport" content="width=device-width,initial-scale=1">
         {% load static %}{% if host_runtime %}<script type="module" src="{% static 'django_tings/interactive_table/datastar-1.0.2.js' %}"></script>{% endif %}
         {% include 'django_tings/interactive_table/assets.html' with host_datastar=host_runtime %}</head>

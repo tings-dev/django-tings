@@ -153,6 +153,26 @@ urlpatterns = [
 
 @override_settings(ROOT_URLCONF=__name__)
 class DirectoryTests(SimpleTestCase):
+    def test_date_range_declarations_and_direct_parsing_accept_legacy_spellings(self):
+        from django.http import QueryDict
+
+        from django_tings.interactive_table import TableRequestState
+
+        for alias in ("daterange", "date_range", "date-range"):
+            with self.subTest(alias=alias):
+
+                class Events(Directory):
+                    column_filters = {"dated": alias}
+
+                self.assertEqual(Events.column_filters["dated"], "daterange")
+                query = QueryDict("filter_dated_start=2025-01-01&filter_dated=invalid")
+                parsed = TableRequestState.from_querydict(
+                    query, sortable_columns=(), column_filter_names={"dated": alias}
+                )
+                self.assertEqual(
+                    parsed.column_filters, {"dated": {"start": "2025-01-01"}}
+                )
+
     def test_last_matching_page_uses_only_visible_records(self):
         params = {"q": "a", "sort": "name", "direction": "desc", "page": 999}
         response = self.client.get("/directory/", params, headers={"Member": "yes"})

@@ -16,6 +16,10 @@ type FilterValue = str | Mapping[str, str]
 type LoaderFilter = tuple[str, ...] | Mapping[str, str]
 
 
+def canonical_filter_kind(kind: str) -> str:
+    return "daterange" if kind in ("date-range", "date_range") else kind
+
+
 @dataclass(frozen=True, slots=True)
 class TableRequestState:
     """Allowlisted filter, sorting, and pagination state from a query string."""
@@ -44,11 +48,11 @@ class TableRequestState:
         for name in column_filter_names:
             key = f"{prefix}filter_{name}"
             kind = (
-                column_filter_names.get(name)
+                canonical_filter_kind(column_filter_names[name])
                 if isinstance(column_filter_names, Mapping)
                 else None
             )
-            is_range = kind in ("daterange", "date_range", "date-range")
+            is_range = kind == "daterange"
             if not is_range:
                 values = [v.strip() for v in query.getlist(key) if v.strip()]
                 if values:

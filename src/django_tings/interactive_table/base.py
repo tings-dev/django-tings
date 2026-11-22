@@ -35,6 +35,7 @@ from django_tings.interactive_table.state import (
     TablePage,
     TableQuery,
     TableRequestState,
+    canonical_filter_kind,
 )
 
 
@@ -90,6 +91,13 @@ class InteractiveTable(tables.Table):
     request_state: TableRequestState
     empty_action_url: str | None
     quick_filter_facets: list[QuickFilterFacet]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        cls.column_filters = {
+            name: canonical_filter_kind(kind)
+            for name, kind in cls.column_filters.items()
+        }
 
     class Meta:
         template_name = "django_tings/interactive_table/table.html"
@@ -418,7 +426,7 @@ class InteractiveTable(tables.Table):
                 filters[name] = cls.quick_filter_selection(state.column_filters)
             elif isinstance(value, str):
                 filters[name] = (value,)
-            elif kind in ("date-range", "date_range", "daterange"):
+            elif kind == "daterange":
                 filters[name] = value or {}
             elif value is not None:
                 filters[name] = value
@@ -616,7 +624,7 @@ class InteractiveTable(tables.Table):
     def query_keys(self) -> str:
         keys = ["q", "page", "sort", "direction"]
         for name, kind in self.column_filters.items():
-            if kind in ("date_range", "date-range", "daterange"):
+            if kind == "daterange":
                 keys.extend((f"filter_{name}_start", f"filter_{name}_end"))
             else:
                 keys.append(f"filter_{name}")

@@ -69,15 +69,11 @@ export function createStickyTableHeaderController(root) {
         return false;
       },
       teardown() {},
-      getRequestTarget(link) {
-        return link;
-      },
     };
   }
 
   const desktopMedia = window.matchMedia("(min-width: 48rem)");
   let active = null;
-  let requestTargets = new WeakMap();
   let resizeFrame = 0;
   let resizeScheduled = false;
   let started = false;
@@ -135,7 +131,6 @@ export function createStickyTableHeaderController(root) {
       restoreSourceControls(active.sourceStates);
     }
     active = null;
-    requestTargets = new WeakMap();
     slot.replaceChildren();
     slot.removeAttribute("data-table-sticky-active");
     slot.style.removeProperty("--table-sticky-header-height");
@@ -240,7 +235,6 @@ export function createStickyTableHeaderController(root) {
     viewport.append(proxyTable);
 
     const sourceStates = [];
-    const nextRequestTargets = new WeakMap();
     for (const proxyCell of proxyCells) {
       proxyCell.setAttribute("role", "presentation");
       for (const semanticAttribute of [
@@ -287,7 +281,6 @@ export function createStickyTableHeaderController(root) {
       });
       proxyLink.removeAttribute("data-on:table-state-request");
       proxyLink.removeAttribute("data-indicator");
-      nextRequestTargets.set(proxyLink, sourceLink);
     }
 
     const syncScroll = () => {
@@ -304,7 +297,6 @@ export function createStickyTableHeaderController(root) {
       sourceStates,
       syncScroll,
     };
-    requestTargets = nextRequestTargets;
 
     try {
       for (const state of sourceStates) {
@@ -344,9 +336,6 @@ export function createStickyTableHeaderController(root) {
     start,
     rebuild,
     teardown,
-    getRequestTarget(link) {
-      return requestTargets.get(link) ?? link;
-    },
     dispose() {
       desktopMedia.removeEventListener("change", handleDesktopChange);
       teardown();

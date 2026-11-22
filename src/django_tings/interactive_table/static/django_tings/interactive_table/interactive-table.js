@@ -10,7 +10,7 @@ const requests = new WeakMap();
 
 function initialize(root) {
   const state = {
-    active: null, retry: null, timer: 0, locationState: ownedState(root), selected: new Set(),
+    active: null, retry: null, timer: 0, committedURL: location.href, selected: new Set(),
     sticky: createStickyTableHeaderController(root),
     overflow: createHorizontalTableOverflowController(root),
   };
@@ -38,8 +38,8 @@ function keys(root) {
   return root.dataset.tableQueryKeys.split(/\s+/).filter(Boolean);
 }
 
-function ownedState(root) {
-  const params = new URL(location.href).searchParams;
+function ownedState(root, url) {
+  const params = new URL(url).searchParams;
   return JSON.stringify(keys(root).map(name => params.getAll(name)));
 }
 
@@ -132,7 +132,7 @@ function refresh(root, target, mode, delay = 0) {
     const trigger = document.createElement("span");
     trigger.hidden = true;
     const controller = new AbortController();
-    const request = { root, state, trigger, controller, mode };
+    const request = { root, state, trigger, controller, mode, target };
     state.active = request;
     requests.set(trigger, request);
     trigger.requestURL = endpoint.href;
@@ -184,8 +184,8 @@ function commit(request, focus, disclosures) {
     state.selected = selected;
   }
   root.dataset.tableEnhanced = "true";
-  const url = pageURL(root, root.dataset.tableUrl);
-  if (request.mode !== "restore" && url.href !== location.href) {
+  const url = pageURL(root, request.mode === "restore" ? request.target : root.dataset.tableUrl);
+  if (ownedState(root, url) !== ownedState(root, location.href)) {
     history[request.mode === "push" ? "pushState" : "replaceState"](history.state, "", url);
   }
   for (const sibling of document.querySelectorAll(selector)) {
@@ -193,7 +193,7 @@ function commit(request, focus, disclosures) {
     synchronizeLinks(sibling, keys(root));
     synchronizeLinks(root, keys(sibling));
   }
-  state.locationState = ownedState(root);
+  state.committedURL = location.href;
   state.active = null;
   state.retry = null;
   state.overflow.rebuild();
@@ -206,6 +206,10 @@ function commit(request, focus, disclosures) {
   restoreSelection(root, state.selected);
   setBusy(root, false);
   root.querySelector("[data-table-refresh-success]").hidden = false;
+  if (request.mode === "replace") {
+    const input = root.querySelector("[data-table-search-input]");
+    if (input) input.value = new URL(request.target).searchParams.get(input.name) || "";
+  }
   restoreFocus(root, focus);
 }
 
@@ -240,6 +244,12 @@ document.addEventListener("datastar-fetch", event => {
     queueMicrotask(() => commit(request, focus, disclosures));
   } else if (type === "error" || type === "retries-failed" || (type === "finished" && !request.received)) {
     state.active = null;
+    if (request.mode === "restore") {
+      history.replaceState(history.state, "", pageURL(root, state.committedURL));
+      for (const sibling of document.querySelectorAll(selector)) {
+        if (sibling !== root) synchronizeLinks(sibling, keys(root));
+      }
+    }
     setBusy(root, false);
     root.querySelector("[data-table-refresh-error]").hidden = false;
   }
@@ -299,9 +309,6 @@ document.addEventListener("click", event => {
     restoreSelection(root, state.selected);
   } else if (event.target.closest("[data-table-filter-disclosure] summary")) {
     event.target.closest("details").dataset.userToggled = "true";
-  } else if (!event.target.closest("a, button, input, select, textarea, label, summary") && !window.getSelection()?.toString()) {
-    const row = event.target.closest("[data-table-row-details-url]");
-    if (row) location.assign(row.dataset.tableRowDetailsUrl);
   }
 });
 
@@ -314,10 +321,27 @@ document.addEventListener("toggle", event => {
 }, true);
 
 window.addEventListener("popstate", () => {
-  for (const root of document.querySelectorAll(selector)) {
+  for (const root of document.querySelectorAll(selector + '[data-table-enhanced="true"]')) {
     const state = stateFor(root);
-    if (ownedState(root) !== state.locationState) refresh(root, location.href, "restore");
+    if (ownedState(root, location.href) !== ownedState(root, state.committedURL)) {
+      refresh(root, location.href, "restore");
+    } else if (state.retry) {
+      cancel(state);
+      state.retry = null;
+      setBusy(root, false);
+      root.querySelector("[data-table-refresh-error]").hidden = true;
+      const input = root.querySelector("[data-table-search-input]");
+      if (input) input.value = input.defaultValue;
+    }
   }
 });
 
-for (const root of document.querySelectorAll(selector)) stateFor(root);
+function enhance(root) {
+  stateFor(root);
+  root.dataset.tableEnhanced = "true";
+}
+
+document.addEventListener("tings-table-ready", event => {
+  if (event.target.matches(selector)) enhance(event.target);
+});
+for (const root of document.querySelectorAll(selector + '[data-table-runtime-ready="true"]')) enhance(root);

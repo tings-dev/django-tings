@@ -16,7 +16,7 @@
         {% endfor %}
       </select>
     </div>
-  {% elif filter_type == "daterange" or filter_type == "date-range" or filter_type == "date_range" %}
+  {% elif filter_type == "daterange" %}
     {% table_filter_value table column "start" as start_value %}
     {% table_filter_value table column "end" as end_value %}
     <div class="table-column-filter">

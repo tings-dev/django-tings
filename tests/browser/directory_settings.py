@@ -12,7 +12,10 @@ INSTALLED_APPS = [
     "django_tings.interactive_table",
 ]
 STATIC_URL = "/static/"
-MIDDLEWARE = ["django.middleware.csrf.CsrfViewMiddleware"]
+MIDDLEWARE = [
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+]
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

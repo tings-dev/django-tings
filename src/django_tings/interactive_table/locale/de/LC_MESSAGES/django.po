@@ -84,12 +84,9 @@ msgstr "Vorheriger Wert:"
 msgid "More details"
 msgstr "Weitere Details"
 
-msgid "1 selected"
-msgstr "1 ausgewählt"
-
 #, python-format
-msgid "%(count)s selected"
-msgstr "%(count)s ausgewählt"
+msgid "Selected: %(count)s"
+msgstr "Ausgewählt: %(count)s"
 
 msgid "Nothing selected"
 msgstr "Nichts ausgewählt"

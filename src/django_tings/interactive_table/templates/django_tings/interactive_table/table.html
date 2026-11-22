@@ -4,7 +4,7 @@
          data-interactive-table data-table-instance="{{ table.instance_name }}"
          data-table-query-keys="{{ table.query_keys }}" data-table-query-prefix="{{ table.query_prefix }}"
          data-table-endpoint="{{ table.get_sse_url }}" data-table-url="{{ table.get_current_url }}"
-         data-init="el.dataset.tableEnhanced = 'true'"
+         data-init="el.dataset.tableRuntimeReady = 'true'; el.dispatchEvent(new Event('tings-table-ready', {bubbles: true}))"
          data-table-density="{{ table.get_density }}"
          {% if table.display.wide_table %}data-table-wide{% endif %}
          {% if table.display.pin_identity_column %}data-table-pin-identity{% endif %}

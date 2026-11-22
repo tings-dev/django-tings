@@ -1,8 +1,8 @@
-{% load i18n %}
+{% load i18n %}{% get_current_language as language %}
 <div class="table-selection-bar"
      data-table-selection-bar
-     data-selection-count-one="{% translate "1 selected" %}"
-     data-selection-count-template="{% blocktranslate with count="%s" %}{{ count }} selected{% endblocktranslate %}"
+     lang="{{ language }}"
+     data-selection-count-template="{% blocktranslate with count="{count}" %}Selected: {{ count }}{% endblocktranslate %}"
      data-selection-none="{% translate "Nothing selected" %}">
   <label class="table-selection-bar__all">
     <input class="table-select-checkbox" type="checkbox" data-table-select-page>

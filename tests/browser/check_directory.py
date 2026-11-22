@@ -1,6 +1,7 @@
 """Run with the wheel and Playwright installed, from outside the source tree."""
 
 import os
+import re
 import threading
 from contextlib import contextmanager
 from socketserver import ThreadingMixIn
@@ -173,10 +174,10 @@ def check_review(browser, url):
         check = root.get_by_role("checkbox", name="Select Atlas")
         check.check()
         root.get_by_role("link", name="Next page").click()
-        expect(root.get_by_text("1 selected")).to_be_visible()
+        expect(root.get_by_text("Selected: 1")).to_be_visible()
         expect(root.get_by_text("Page 2 of 4")).to_be_visible()
         root.get_by_role("checkbox", name="Select Clara").check()
-        expect(root.get_by_text("2 selected")).to_be_visible()
+        expect(root.get_by_text("Selected: 2")).to_be_visible()
         expect(
             page.locator("#suppliers").get_by_text("Nothing selected")
         ).to_be_visible()
@@ -203,12 +204,150 @@ def check_review(browser, url):
         page.close()
 
 
+def check_history_ordering(browser, url):
+    page = browser.new_page()
+    page.add_init_script("""const originalFetch = window.fetch;
+        window.fetch = (input, init) => originalFetch(input, {...init, signal: undefined});""")
+    page.goto(url + "?tab=review")
+    clients = page.locator("#clients")
+    clients.get_by_role("link", name="Next page").click()
+    expect(clients.get_by_text("Page 2 of 4")).to_be_visible()
+    held = []
+    page.route("**/directory/?tab=review&datastar=*", lambda route: held.append(route))
+    with page.expect_request(lambda request: request.headers.get("datastar-request")):
+        page.go_back()
+    page.go_forward()
+    with page.expect_event(
+        "requestfinished",
+        predicate=lambda request: request.headers.get("datastar-request"),
+    ):
+        route = held.pop()
+        route.fulfill(response=route.fetch())
+    expect(clients).to_have_attribute("aria-busy", "false")
+    expect(clients.get_by_text("Page 2 of 4")).to_be_visible()
+    assert "clients-page=2" in page.url
+    page.close()
+
+
+def check_restore_retry(browser, url):
+    page = browser.new_page()
+    page.goto(url + "?tab=review")
+    clients = page.locator("#clients")
+    suppliers = page.locator("#suppliers")
+    clients.get_by_role("link", name="Next page").click()
+    expect(clients.get_by_text("Page 2 of 4")).to_be_visible()
+    committed = page.url
+    mask = "**/directory/?tab=review&datastar=*"
+    page.route(mask, lambda route: route.fulfill(status=503))
+    page.go_back()
+    retry = clients.get_by_role("button", name="Retry")
+    expect(retry).to_be_visible()
+    expect(clients.get_by_text("Page 2 of 4")).to_be_visible()
+    assert page.url == committed
+    expect(suppliers.get_by_role("link", name="Next page")).to_have_attribute(
+        "href", re.compile("clients-page=2")
+    )
+    page.unroute(mask)
+    suppliers.get_by_role("link", name="Next page").click()
+    expect(suppliers.get_by_text("Page 2 of 4")).to_be_visible()
+    retry.click()
+    expect(clients.get_by_text("Page 1 of 4")).to_be_visible()
+    assert "clients-page" not in page.url and "suppliers-page=2" in page.url
+    assert "tab=review" in page.url
+    page.close()
+
+
+def check_search_draft(browser, url):
+    page = browser.new_page()
+    page.goto(url)
+    clients = page.locator("#clients")
+    search = clients.get_by_role("searchbox")
+    search.fill("Clark ")
+    expect(clients.get_by_text("3 records", exact=True)).to_be_visible()
+    assert "clients-q=Clark&" in page.url
+    expect(search).to_have_value("Clark ")
+    assert search.evaluate("el => [el.selectionStart, el.selectionEnd]") == [6, 6]
+    search.press("B")
+    expect(clients.get_by_text("1 record", exact=True)).to_be_visible()
+    expect(clients.get_by_role("cell", name="Clark B")).to_be_visible()
+    expect(search).to_have_value("Clark B")
+    clients.get_by_role("link", name="Clear search and filters").click()
+    expect(search).to_have_value("")
+    page.go_back()
+    expect(search).to_have_value("Clark B")
+    page.close()
+
+
+def check_pager_focus(browser, url):
+    page = browser.new_page(viewport={"width": 900, "height": 360})
+    page.goto(url + "?both=1")
+    clients = page.locator("#clients")
+    pager = clients.get_by_role("navigation", name="Table pages").last
+    next_page = pager.get_by_role("link", name="Next page")
+    next_page.focus()
+    top = next_page.bounding_box()["y"]
+    next_page.press("Enter")
+    expect(pager.get_by_text("Page 2 of 4")).to_be_visible()
+    expect(next_page).to_be_focused()
+    assert abs(next_page.bounding_box()["y"] - top) < 2
+    page.close()
+
+
+def check_partial_assets(browser, url):
+    for missing in ("interactive-table.js", "datastar-1.0.2.js"):
+        page = browser.new_page()
+        page.route("**/" + missing, lambda route: route.abort())
+        page.goto(url + "?tab=review&suppliers-page=2")
+        clients = page.locator("#clients")
+        clients.get_by_role("searchbox").fill("Clark")
+        submit = clients.get_by_role("button", name="Search", exact=True)
+        expect(submit).to_be_visible()
+        submit.click()
+        expect(clients.get_by_text("3 records", exact=True)).to_be_visible()
+        assert "suppliers-page=2" in page.url and "tab=review" in page.url
+        page.close()
+
+
+def check_row_details(browser, url):
+    for width in (360, 1440):
+        page = browser.new_page(viewport={"width": width, "height": 900})
+        page.goto(url + "?review=yes")
+        clients = page.locator("#clients")
+        clients.locator(".host-badge:visible").first.click()
+        assert "details=" not in page.url
+        clients.get_by_role("checkbox", name="Select Atlas").check()
+        expect(clients.get_by_role("checkbox", name="Select Atlas")).to_be_checked()
+        identity = clients.get_by_role("link", name="Atlas")
+        identity.focus()
+        identity.press("Enter")
+        page.wait_for_url("**/*details=Atlas*")
+        page.close()
+
+
+def check_localized_selection(browser, url):
+    for locale, expected in (("de", "Ausgewählt: 2"), ("bn", "Selected: ২")):
+        page = browser.new_page(locale=locale)
+        page.goto(url + "?review=yes")
+        clients = page.locator("#clients")
+        clients.get_by_role("checkbox", name=re.compile("Atlas")).check()
+        clients.get_by_role("checkbox", name=re.compile("Axel")).check()
+        expect(clients.get_by_text(expected, exact=True)).to_be_visible()
+        page.close()
+
+
 if __name__ == "__main__":
     with directory_url() as start, sync_playwright() as driver:
         browser = driver.chromium.launch(executable_path=os.environ.get("CHROME_BIN"))
         try:
             check_search(browser, start)
             check_failure_and_ordering(browser, start)
+            check_history_ordering(browser, start)
+            check_restore_retry(browser, start)
+            check_search_draft(browser, start)
+            check_pager_focus(browser, start)
+            check_partial_assets(browser, start)
+            check_row_details(browser, start)
+            check_localized_selection(browser, start)
             check_get_form(browser, start)
             check_review(browser, start)
         finally:

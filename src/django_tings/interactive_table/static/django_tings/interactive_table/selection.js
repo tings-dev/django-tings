@@ -7,10 +7,9 @@ export function restoreSelection(root, selected) {
   const all = bar.querySelector("[data-table-select-page]");
   all.checked = boxes.length > 0 && boxes.every(box => box.checked);
   all.indeterminate = !all.checked && boxes.some(box => box.checked);
-  const label = selected.size === 1 ? bar.dataset.selectionCountOne :
-    bar.dataset.selectionCountTemplate.replace("%s", String(selected.size));
-  bar.querySelector("[data-table-selection-count]").textContent =
-    selected.size ? label : bar.dataset.selectionNone;
+  const count = new Intl.NumberFormat(bar.lang).format(selected.size);
+  bar.querySelector("[data-table-selection-count]").textContent = selected.size
+    ? bar.dataset.selectionCountTemplate.replaceAll("{count}", count) : bar.dataset.selectionNone;
   for (const button of bar.querySelectorAll("[data-table-selection-clear], [data-table-selection-act]")) {
     button.disabled = !selected.size;
   }

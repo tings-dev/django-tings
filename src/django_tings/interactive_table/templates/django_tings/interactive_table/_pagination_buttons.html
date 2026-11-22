@@ -7,14 +7,14 @@
        href="{{ first_url }}"
        aria-label="{% translate 'First page' %}"
        data-table-state-url
-       data-table-focus-key="page-first">
+       data-table-focus-key="page-{{ position }}-first">
       <span aria-hidden="true">«</span><span class="sr-only">{% translate "First page" %}</span>
     </a>
     <a class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-field border border-border px-2 text-teal"
        href="{{ previous_url }}"
        aria-label="{% translate 'Previous page' %}"
        data-table-state-url
-       data-table-focus-key="page-previous">
+       data-table-focus-key="page-{{ position }}-previous">
       <span aria-hidden="true">‹</span><span class="sr-only">{% translate "Previous page" %}</span>
     </a>
   {% else %}
@@ -22,14 +22,14 @@
           aria-disabled="true"
           aria-label="{% translate 'First page' %}"
           tabindex="-1"
-          data-table-focus-key="page-first">
+          data-table-focus-key="page-{{ position }}-first">
       <span aria-hidden="true">«</span><span class="sr-only">{% translate "First page" %}</span>
     </span>
     <span class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-field border border-border px-2 text-muted-ink opacity-60"
           aria-disabled="true"
           aria-label="{% translate 'Previous page' %}"
           tabindex="-1"
-          data-table-focus-key="page-previous">
+          data-table-focus-key="page-{{ position }}-previous">
       <span aria-hidden="true">‹</span><span class="sr-only">{% translate "Previous page" %}</span>
     </span>
   {% endif %}
@@ -45,14 +45,14 @@
        href="{{ next_url }}"
        aria-label="{% translate 'Next page' %}"
        data-table-state-url
-       data-table-focus-key="page-next">
+       data-table-focus-key="page-{{ position }}-next">
       <span aria-hidden="true">›</span><span class="sr-only">{% translate "Next page" %}</span>
     </a>
     <a class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-field border border-border px-2 text-teal"
        href="{{ last_url }}"
        aria-label="{% translate 'Last page' %}"
        data-table-state-url
-       data-table-focus-key="page-last">
+       data-table-focus-key="page-{{ position }}-last">
       <span aria-hidden="true">»</span><span class="sr-only">{% translate "Last page" %}</span>
     </a>
   {% else %}
@@ -60,14 +60,14 @@
           aria-disabled="true"
           aria-label="{% translate 'Next page' %}"
           tabindex="-1"
-          data-table-focus-key="page-next">
+          data-table-focus-key="page-{{ position }}-next">
       <span aria-hidden="true">›</span><span class="sr-only">{% translate "Next page" %}</span>
     </span>
     <span class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-field border border-border px-2 text-muted-ink opacity-60"
           aria-disabled="true"
           aria-label="{% translate 'Last page' %}"
           tabindex="-1"
-          data-table-focus-key="page-last">
+          data-table-focus-key="page-{{ position }}-last">
       <span aria-hidden="true">»</span><span class="sr-only">{% translate "Last page" %}</span>
     </span>
   {% endif %}
