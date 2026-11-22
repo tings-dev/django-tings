@@ -14,7 +14,7 @@
         {% for column in table.columns %}
           {% table_column_kind table column.name as kind %}
           {% table_column_sublabel table column.name as sublabel %}
-          {% if column.orderable and column.name in table.sortable_columns %}
+          {% if column.name in table.available_sort_columns %}
             {% table_aria_sort table column.name as aria_sort %}
             {% table_sort_url table column.name as destination %}
             <th scope="col" data-kind="{{ kind }}"{% if table.display.pin_identity_column and column.name == table.get_identity_column %} data-identity-column="true"{% endif %} aria-sort="{{ aria_sort }}"{% if column.attrs.th %} {% render_attrs column.attrs.th %}{% endif %}>
@@ -126,7 +126,7 @@
   </div>
 </div>
 
-{% if table.sortable_columns and table.display.mobile %}
+{% if table.available_sort_columns and table.display.mobile %}
   <details class="mb-3 rounded-surface border border-border bg-surface md:hidden" data-table-mobile-sort>
     <summary class="min-h-11 cursor-pointer px-3 py-2 font-bold text-teal">
       <span>{% translate "Sort results" %}</span>
@@ -139,7 +139,7 @@
     </summary>
     <ul class="border-t border-border p-2" role="list">
       {% for column in table.columns %}
-        {% if column.orderable and column.name in table.sortable_columns %}
+        {% if column.name in table.available_sort_columns %}
           {% table_sort_url table column.name as destination %}
           <li>
             <a class="flex min-h-11 items-center justify-between rounded-field px-2 font-bold text-teal underline"

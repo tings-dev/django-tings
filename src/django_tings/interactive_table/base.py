@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.utils.functional import Promise
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
+from django_tables2.tables import TableOptions
 
 from django_tings.interactive_table.display import (
     DEFAULT_TABLE_DISPLAY,
@@ -50,11 +51,12 @@ class InteractiveTable(tables.Table):
     quick_filter_column: ClassVar[str | None] = None
     # Values selected when the request carries no explicit quick-filter state.
     quick_filter_default: ClassVar[tuple[str, ...]] = ()
-    sse_endpoint: ClassVar[str] = ""
+    sse_endpoint: ClassVar[str | Promise] = ""
     sse_fixed_query: ClassVar[Mapping[str, str]] = {}
     default_page_size: ClassVar[int] = 25
     static_height: ClassVar[bool] = True
     display: ClassVar[TableDisplay] = DEFAULT_TABLE_DISPLAY
+    _meta: ClassVar[TableOptions]
     base_columns: ClassVar[Mapping[str, tables.Column]]
     _truncate_cells: ClassVar[bool] = (
         True  # Whether to truncate cell content to a single line
@@ -67,7 +69,13 @@ class InteractiveTable(tables.Table):
     pagination_alignment_above: ClassVar[str] = "center"
     pagination_alignment_below: ClassVar[str] = "center"
 
-    # Instance attributes set by create_current()
+    # Instance attributes resolved by the table factory.
+    available_sort_columns: Sequence[str]
+    theme: TableTheme
+    query: TableQuery
+    page_data: TablePage
+    instance_name: str
+    query_prefix: str
     current_page: int
     total_pages: int
     total_count: int
@@ -85,7 +93,6 @@ class InteractiveTable(tables.Table):
 
     class Meta:
         template_name = "django_tings/interactive_table/table.html"
-        orderable = False
 
     @classmethod
     async def _fetch_data(
@@ -243,6 +250,21 @@ class InteractiveTable(tables.Table):
         return TablePage(rows, total, choices, facets)
 
     @classmethod
+    def _sortable_fields(
+        cls,
+        hidden: Sequence[str],
+        extra_columns: Sequence[tuple[str, tables.Column]] = (),
+    ) -> tuple[str, ...]:
+        columns = {**cls.base_columns, **dict(extra_columns)}
+        return tuple(
+            name
+            for name in cls.sortable_columns
+            if name not in hidden
+            and (column := columns.get(name)) is not None
+            and (cls._meta.orderable if column.orderable is None else column.orderable)
+        )
+
+    @classmethod
     async def for_request(
         cls,
         request: HttpRequest,
@@ -254,8 +276,8 @@ class InteractiveTable(tables.Table):
         extra_columns: Sequence[tuple[str, tables.Column]] = (),
         exclude: Sequence[str] = (),
         fixed_query: Mapping[str, str] | None = None,
-        endpoint: str | None = None,
-        page_url: str | None = None,
+        endpoint: str | Promise | None = None,
+        page_url: str | Promise | None = None,
         page_size: int | None = None,
         config: Mapping[str, Any] | None = None,
         user: Any | None = None,
@@ -266,7 +288,7 @@ class InteractiveTable(tables.Table):
         hidden = tuple(
             dict.fromkeys((*cls.hidden_column_names(), *exclude, *cls._meta.exclude))
         )
-        sortable = [name for name in cls.sortable_columns if name not in hidden]
+        sortable = cls._sortable_fields(hidden, extra_columns)
         state = TableRequestState.from_querydict(
             request.GET,
             sortable_columns=sortable,
@@ -329,7 +351,7 @@ class InteractiveTable(tables.Table):
     ) -> Self:
         """Construct a class-based table for callers providing already parsed state."""
         hidden = cls.hidden_column_names()
-        sortable = [name for name in cls.sortable_columns if name not in hidden]
+        sortable = cls._sortable_fields(hidden)
         state = TableRequestState(
             filter_text,
             max(1, page),
@@ -366,8 +388,8 @@ class InteractiveTable(tables.Table):
         theme: TableTheme | Mapping[str, str] | None = None,
         extra_columns: Sequence[tuple[str, tables.Column]] = (),
         fixed_query: Mapping[str, str] | None = None,
-        endpoint: str | None = None,
-        page_url: str | None = None,
+        endpoint: str | Promise | None = None,
+        page_url: str | Promise | None = None,
         page_size: int | None = None,
         config: Mapping[str, Any] | None = None,
         user: Any | None = None,
@@ -423,9 +445,12 @@ class InteractiveTable(tables.Table):
             exclude=exclude,
             extra_columns=extra_columns,
             template_name=template,
-            orderable=False,
         )
-        table.display = display or cls.display
+        table.available_sort_columns = sortable
+        # Host subclasses declare the default once. A request may shadow it on
+        # this instance without changing the declaration used by another user.
+        if display is not None:
+            table.display = display  # pyrefly: ignore[read-only]  # ty: ignore[invalid-attribute-access]
         table.theme = TableTheme.resolve(theme)
         table._validate_display()
         table.query, table.page_data = query, result
@@ -550,8 +575,8 @@ class InteractiveTable(tables.Table):
     def _set_navigation(
         self,
         request: HttpRequest | None,
-        page_url: str | None,
-        endpoint: str | None,
+        page_url: str | Promise | None,
+        endpoint: str | Promise | None,
         fixed_query: Mapping[str, str] | None,
     ) -> None:
         # A separate refresh endpoint carries its own routing parameters. The
@@ -569,9 +594,9 @@ class InteractiveTable(tables.Table):
             if page_target
             else source.path
         )
-        base = urlsplit(target)
+        base = urlsplit(str(target))
         self._page_path = base.path
-        self._endpoint = endpoint or self.sse_endpoint or self._page_path
+        self._endpoint = str(endpoint or self.sse_endpoint or self._page_path)
         self.fixed_query = {**self.endpoint_query(), **(fixed_query or {})}
         context = QueryDict(source.query, mutable=True)
         for name in self.query_keys.split():
