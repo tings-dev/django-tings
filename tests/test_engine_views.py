@@ -8,11 +8,12 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
 from django.template import RequestContext, Template
 from django.test import SimpleTestCase, override_settings
-from django.urls import path
+from django.urls import path, reverse_lazy
 
 from django_tings.interactive_table import (
     InteractiveTable,
     TableDisplay,
+    TableMobileLayout,
     TablePage,
     TableRowTarget,
 )
@@ -48,6 +49,13 @@ async def directory(request):
             "total": table.total_count,
         }
     )
+
+
+class MembersTable(Directory):
+    sse_endpoint = reverse_lazy("members-refresh")
+    office = tables.Column(orderable=False)
+    handle = tables.Column(orderable=True)
+    sortable_columns = ["name", "office"]
 
 
 class Review(Directory):
@@ -112,19 +120,20 @@ async def institution(request):
 
     display = TableDisplay(
         caption="Members",
+        mobile=TableMobileLayout(heading_column="name", summary_columns=("office",)),
         row_target=TableRowTarget(
             label_column="name", route_name="profile", route_fields={"slug": "slug"}
         ),
     )
     if request.headers.get("Datastar-Request"):
         return await table_sse_response_async(
-            Directory,
+            MembersTable,
             request,
             load_page=load_page,
             instance_name="staff",
             display=display,
         )
-    table = await Directory.for_request(
+    table = await MembersTable.for_request(
         request, load_page=load_page, instance_name="staff", display=display
     )
     html = Template("{% load django_tables2 %}{% render_table table %}").render(
@@ -135,6 +144,7 @@ async def institution(request):
 
 urlpatterns = [
     path("directory/", directory),
+    path("members/refresh/", institution, name="members-refresh"),
     path("profiles/<slug:slug>/", institution, name="profile"),
     path("institution/", institution),
     path("review/<slug:instance_name>/", review),
@@ -231,3 +241,23 @@ class DirectoryTests(SimpleTestCase):
         )
         body = b"".join([part async for part in response.streaming_content])
         self.assertIn(b"Alma", body)
+
+    def test_sort_links_match_column_declarations_on_desktop_and_mobile(self):
+        response = self.client.get(
+            "/institution/?staff-sort=office", headers={"Member": "yes"}
+        )
+        for layout in ("desktop", "mobile"):
+            self.assertContains(response, f'data-table-focus-key="sort-{layout}-name"')
+            self.assertNotContains(
+                response, f'data-table-focus-key="sort-{layout}-office"'
+            )
+            self.assertNotContains(
+                response, f'data-table-focus-key="sort-{layout}-handle"'
+            )
+        self.assertContains(response, 'aria-sort="ascending"')
+        self.assertContains(response, "staff-sort=name&amp;staff-direction=desc")
+        self.assertNotContains(response, "staff-sort=office")
+
+    def test_named_refresh_endpoint_resolves_when_the_page_is_rendered(self):
+        response = self.client.get("/institution/", headers={"Member": "yes"})
+        self.assertContains(response, 'data-table-endpoint="/members/refresh/"')
