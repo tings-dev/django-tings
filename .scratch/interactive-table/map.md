@@ -1,6 +1,7 @@
 # Extract Carbonsheet’s interactive table into django-tings
 
 Label: wayfinder:map
+Status: resolved
 
 ## Destination
 
@@ -19,10 +20,11 @@ Agree on a public interface for `django_tings.interactive_table` and a validatio
 - [How does an application supply rows and request context?](issues/01-table-data-interface.md) was resolved by passing a request-scoped async loader from the view.
 - [How does a project configure and theme the table?](issues/02-display-and-theme.md) was resolved with `TableDisplay`, scoped CSS variables and named Django templates.
 - [What state belongs to one table instance?](issues/03-table-state.md) was resolved with independent named tables on shared URLs and the same search parameters for live refreshes and ordinary GETs.
+- [What demonstrates standalone reuse and a complete Carbonsheet replacement?](issues/04-parity-validation.md) sets the version targets and requires both consumers to validate the same wheel, including live search.
 
 ## Not yet specified
 
-<!-- No additional questions beyond the open decision tickets. -->
+All four decisions are resolved.
 
 ## Out of scope
 
